@@ -12,7 +12,7 @@ module.exports = {
             .setTimestamp()
                 .setFooter(client.user.username, client.user.displayAvatarURL())
                 
-                .setDescription('I will ask you some questions, you have 60 seconds each time to answer. Just react to the corresponding reaction. Please wait for all the reactions to show up before reaction. If it\'s not working, try to re-react again.\nYou must not exceed 5 points in order to make a balanced nation.\nPlease react with 🟢 to start.')
+                .setDescription('I will ask you some questions, you have 60 seconds each time to answer. Just react to the corresponding reaction. Please wait for all the reactions to show up before reaction. If it\'s not working, try to re-react again.\nYou must not exceed 6 points in order to make a balanced nation.\nPlease react with 🟢 to start.')
             ).then(startMessage => {
 
 
@@ -28,10 +28,11 @@ module.exports = {
                 )
                 let answers = [];
                 let points = 0;
+                let image;
                 collector.on('collect', async reaction => {
 
                     if (reaction.emoji.name === '🟢') {
-                        message.author.send(new MessageEmbed()
+                      await  message.author.send(new MessageEmbed()
                             .setTimestamp()
                             .setFooter(`${client.user.username} | points: X`, client.user.displayAvatarURL())
                             .setTitle('What is the state of your economy ?')
@@ -118,7 +119,7 @@ module.exports = {
                                                             time: 60000,
                                                             max: 1
                                                         })
-                                                        .then(collected3 => {
+                                                        .then(async collected3 => {
                                                             if(!collected3.first()) return message.author.send('Time expired, please restart.')
                                                             switch (collected3.first().emoji.name) {
                                                                 case '🟢':
@@ -137,14 +138,65 @@ module.exports = {
                                                                     return message.author.send('Wrong reaction, please restart.')
             
                                                             }
-            
-                                                            if(points > 5) return message.author.send('You exceeded 5 points, please restart again.')
-                                                            else client.channels.cache.get('737648949459943509').send(new MessageEmbed()
+                                                            
+                                                            if(points > 6) return message.author.send('You exceeded 6 points, please restart again.')
+
+                                                            const filter = response => {
+                                                                return response.author.id === message.author.id
+                                                            };
+                                                            
+                                                      await      message.author.send(new MessageEmbed()
                                                             .setTimestamp()
-                                                            .setFooter(`${client.user.username} | Total Points: ${points}`, client.user.displayAvatarURL())
-                                                            .setTitle('New Nation !')
-                                                            .setDescription(`State of the economy: \`${answers[0]}\`\nCountry Stability: \`${answers[1]}\`\n Military state: \`${answers[2]}\``)
-                                                            )
+                                                            .setFooter(`${client.user.username} | points: ${points}`, client.user.displayAvatarURL())
+                                                            .setTitle('What is your nation\'s name ?')).then(() => {
+                                                                message.author.dmChannel.awaitMessages(filter, { max: 1, time: 300000, errors: ['time'] })
+                                                                    .then(nationName => {
+                                                                       answers.push(nationName.first().content)
+                                                                       message.author.send(new MessageEmbed()
+                                                                       .setTimestamp()
+                                                                       .setFooter(`${client.user.username} | points: ${points}`, client.user.displayAvatarURL())
+                                                                       .setTitle('What is your ideology ?')).then(() => {
+                                                                           message.author.dmChannel.awaitMessages(filter, { max: 1, time: 300000, errors: ['time'] })
+                                                                               .then(ideology => {
+                                                                                  answers.push(ideology.first().content)
+                                                                                  message.author.send(new MessageEmbed()
+                                                                                  .setTimestamp()
+                                                                                  .setFooter(`${client.user.username} | points: ${points}`, client.user.displayAvatarURL())
+                                                                                  .setTitle('Please send your nation\'s flag in a .png | .jpg | .jpeg file.')).then(() => {
+                                                                                      message.author.dmChannel.awaitMessages(filter, { max: 1, time: 120000, errors: ['time'] })
+                                                                                          .then(imageSent => {
+                                                                                              console.log(imageSent)
+                                                                                             if(!imageSent.first().attachments) return message.author.dmChannel.send('You did not send a picture. Please restart')
+                                                                                             
+                                                                                             console.log(answers)
+                                                                                             client.channels.cache.get('796877530925760553').send(new MessageEmbed()
+                                                                                             .setTimestamp()
+                                                                                             .setFooter(`${client.user.username} | Total Points: ${points}`, client.user.displayAvatarURL())
+                                                                                             .setTitle(`New Nation: ${answers[3]}`)
+                                                                                             .setDescription(`State of the economy: \`${answers[0]}\`\nCountry Stability: \`${answers[1]}\`\n Military state: \`${answers[2]}\`\nIdeology: \`${answers[4]}\``)
+                                                                                             .setThumbnail(imageSent.first().attachments.first().url)
+                                                                                             .setAuthor(`${message.author.tag}`, message.author.avatarURL())
+                                                                                             )
+                                                                                          })
+                                                                                          .catch(collected => {
+                                                                                              message.author.dmChannel.send('Please restart, you took too long to answer (2 minutes)');
+                                                                                          });
+                                                                                  });
+                                                                               })
+                                                                               .catch( () => {
+                                                                                   message.author.dmChannel.send('Please restart, you took too long to answer (5 minutes)');
+                                                                               });
+                                                                       });
+
+                                                                    })
+                                                                    .catch(collected => {
+                                                                        message.author.dmChannel.send('Please restart, you took too long to answer (5 minutes)');
+                                                                    });
+                                                            });
+
+
+
+                                                           
                                                         })
             
             
